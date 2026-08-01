@@ -4,6 +4,8 @@
 
 一个使用 SwiftUI 制作的 macOS 透明桌宠。
 
+[下载最新版 macOS 安装包](https://github.com/ianchiou28/MutsumiPet/releases/latest/download/MutsumiPet-macOS.zip) · 支持 macOS 13 及以上版本
+
 应用图标采用马赛克瓷砖拼成的 Q 版若叶睦设计，并包含完整的 macOS 多尺寸 ICNS 资源。
 
 ## 动作预览
