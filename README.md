@@ -1,6 +1,8 @@
 # MutsumiPet · 若叶睦桌宠
 
-![马赛克风格的若叶睦应用图标](assets/MutsumiPetIcon.png)
+<p align="center">
+  <img src="assets/MutsumiPetIcon.png" width="420" alt="马赛克风格的若叶睦应用图标">
+</p>
 
 一个使用 SwiftUI 制作的 macOS 透明桌宠。
 
