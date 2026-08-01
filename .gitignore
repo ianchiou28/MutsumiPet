@@ -1,0 +1,7 @@
+/.build
+/dist
+/.swiftpm
+/work
+/outputs
+/.codex
+.DS_Store
