@@ -78,6 +78,17 @@ foreach ($reference in $references) {
 
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
+# This script never reads the .csproj files, so a malformed one would otherwise
+# only surface in CI. Well-formedness is cheap to check and catches the easy
+# mistakes (a '--' inside an XML comment, an unclosed element).
+foreach ($project in Get-ChildItem (Join-Path $root 'windows') -Filter '*.csproj' -Recurse) {
+    try {
+        (New-Object System.Xml.XmlDocument).Load($project.FullName)
+    } catch {
+        throw ("{0} is not well-formed XML: {1}" -f $project.Name, $_.Exception.InnerException.Message)
+    }
+}
+
 # --- Icon --------------------------------------------------------------------
 
 if (-not (Test-Path $iconPath)) {

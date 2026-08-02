@@ -5,7 +5,8 @@
     mirroring Swift's `@testable import MutsumiPet` and keeping this project
     byte-for-byte equivalent to what `script/build_windows.ps1 -Test` produces.
 
-    Run with: dotnet run --project windows/MutsumiPet.Windows.Tests
+    Run it with "dotnet run" against this project directory, or via
+    script/build_windows.ps1 -Test.
   -->
 
   <PropertyGroup>
