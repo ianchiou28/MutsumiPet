@@ -5,3 +5,8 @@
 /outputs
 /.codex
 .DS_Store
+
+# Windows build output
+/build
+bin/
+obj/

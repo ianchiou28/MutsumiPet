@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The app sources are compiled into this test binary rather than referenced,
+    mirroring Swift's `@testable import MutsumiPet` and keeping this project
+    byte-for-byte equivalent to what `script/build_windows.ps1 -Test` produces.
+
+    Run with: dotnet run --project windows/MutsumiPet.Windows.Tests
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>MutsumiPetTests</AssemblyName>
+    <RootNamespace>MutsumiPet.Tests</RootNamespace>
+    <StartupObject>MutsumiPet.Tests.TestRunner</StartupObject>
+    <LangVersion>5</LangVersion>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <!-- The app's Properties/AssemblyInfo.cs is compiled in below. -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="**\*.cs" Exclude="bin\**;obj\**" />
+    <Compile Include="..\MutsumiPet.Windows\**\*.cs" Exclude="..\MutsumiPet.Windows\bin\**;..\MutsumiPet.Windows\obj\**" />
+
+    <EmbeddedResource Include="..\..\Sources\MutsumiPet\Resources\*.png">
+      <LogicalName>%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

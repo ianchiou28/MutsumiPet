@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Optional MSBuild path for anyone who has the .NET SDK installed. The primary,
+    install-free build is script/build_windows.ps1, which compiles these exact
+    sources with the C# compiler that ships with Windows - hence LangVersion 5.
+
+    net48 is deliberate: .NET Framework 4.8 is present on every supported Windows
+    release, so the published executable needs no runtime download.
+  -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>MutsumiPet</AssemblyName>
+    <RootNamespace>MutsumiPet</RootNamespace>
+    <StartupObject>MutsumiPet.App.MutsumiPetApp</StartupObject>
+    <LangVersion>5</LangVersion>
+    <ApplicationIcon>..\..\assets\MutsumiPet.ico</ApplicationIcon>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <!-- Version metadata lives in Properties/AssemblyInfo.cs so the csc and MSBuild
+         builds stamp identical values. -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="**\*.cs" Exclude="bin\**;obj\**" />
+
+    <!-- The same PNG artwork the macOS build ships, embedded so the executable is
+         self-contained. LogicalName keeps the lookup key as "mutsumi_pet.png". -->
+    <EmbeddedResource Include="..\..\Sources\MutsumiPet\Resources\*.png">
+      <LogicalName>%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
