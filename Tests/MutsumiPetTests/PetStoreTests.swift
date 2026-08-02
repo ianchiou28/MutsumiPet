@@ -12,9 +12,9 @@ final class PetStoreTests: XCTestCase {
 
     func testTapCyclesMessageAndMood() {
         let store = makeStore()
-        store.reactToTap()
+        store.reactToTap(randomDialogueIndex: 1)
 
-        XCTAssertEqual(store.message, PetStore.phrases[1])
+        XCTAssertEqual(store.message, PetDialogueScene.curious.lines[1])
         XCTAssertEqual(store.mood, .curious)
         XCTAssertEqual(store.pose, .curious)
         XCTAssertTrue(store.showsBubble)
@@ -31,20 +31,21 @@ final class PetStoreTests: XCTestCase {
     func testIdleTickUsesRequestedPhrase() {
         let store = makeStore()
         store.toggleBubble()
-        store.idleTick(randomIndex: 4)
-        XCTAssertEqual(store.message, PetStore.phrases[4])
+        store.idleTick(randomIndex: 4, sleeping: true)
+        XCTAssertEqual(store.message, PetDialogueScene.sleeping.lines[4])
         XCTAssertEqual(store.mood, .sleepy)
         XCTAssertEqual(store.pose, .sleeping)
     }
 
     func testDraggingUsesGrabbedPose() {
         let store = makeStore()
-        store.beginDrag()
+        store.beginDrag(randomDialogueIndex: 0)
         XCTAssertEqual(store.pose, .grabbed)
-        XCTAssertEqual(store.message, "……被抓住了。")
+        XCTAssertEqual(store.message, PetDialogueScene.grabbed.lines[0])
 
-        store.endDrag()
+        store.endDrag(randomDialogueIndex: 0)
         XCTAssertEqual(store.pose, .curious)
+        XCTAssertEqual(store.message, PetDialogueScene.released.lines[0])
     }
 
     func testWindowLayerCanMoveBehindApps() {
@@ -53,28 +54,16 @@ final class PetStoreTests: XCTestCase {
         XCTAssertEqual(store.layerMode, .desktop)
     }
 
-    func testServerOutageDoesNotTriggerSlowerProtocolRetry() {
-        XCTAssertFalse(LLMServiceError.httpStatus(503, "unavailable").shouldTryResponsesAPI)
-        XCTAssertTrue(LLMServiceError.httpStatus(404, nil).shouldTryResponsesAPI)
-    }
-
-    func testAutomaticThoughtWithoutLLMConfigurationDoesNotReplaceDialogue() {
-        let store = makeStore()
-        let originalMessage = store.message
-        store.automaticThoughtTick()
-        XCTAssertEqual(store.message, originalMessage)
-    }
-
     func testLifestyleCanChooseTeaAndSnack() {
         let teaStore = makeStore()
-        teaStore.lifestyleTick(randomEvent: 4)
+        teaStore.lifestyleTick(randomEvent: 4, randomDialogueIndex: 0)
         XCTAssertEqual(teaStore.activity, .drinkingTea)
-        XCTAssertEqual(teaStore.message, "茶……温度刚好。")
+        XCTAssertEqual(teaStore.message, PetDialogueScene.drinkingTea.lines[0])
 
         let snackStore = makeStore()
-        snackStore.lifestyleTick(randomEvent: 5)
+        snackStore.lifestyleTick(randomEvent: 5, randomDialogueIndex: 0)
         XCTAssertEqual(snackStore.activity, .eatingSnack)
-        XCTAssertEqual(snackStore.message, "点心，分你一点。")
+        XCTAssertEqual(snackStore.message, PetDialogueScene.eatingSnack.lines[0])
     }
 
     func testWanderingCanBeDisabledAndSpeedIsClamped() {
@@ -174,11 +163,11 @@ final class PetStoreTests: XCTestCase {
         store.advanceActivityFrame()
         XCTAssertEqual(store.activity, .eatingSnack)
 
-        store.reactToTap()
+        store.reactToTap(randomDialogueIndex: 0)
 
         XCTAssertEqual(store.activity, .idle)
         XCTAssertEqual(store.animationFrame, 0)
-        XCTAssertEqual(store.message, PetStore.phrases[1])
+        XCTAssertEqual(store.message, PetDialogueScene.idle.lines[0])
     }
 
     func testGeneratedLifestyleAssetsLoadAsRealImages() {
@@ -187,5 +176,21 @@ final class PetStoreTests: XCTestCase {
             XCTAssertGreaterThan(image.size.width, 1)
             XCTAssertGreaterThan(image.size.height, 1)
         }
+    }
+
+    func testEveryActionHasFiveToTenPresetLines() {
+        for scene in PetDialogueScene.allCases {
+            XCTAssertGreaterThanOrEqual(scene.lines.count, 5, "\(scene) needs at least five lines")
+            XCTAssertLessThanOrEqual(scene.lines.count, 10, "\(scene) should stay concise")
+        }
+    }
+
+    func testSpeakForCurrentActionUsesMatchingDialogueSet() {
+        let store = makeStore()
+        store.performLifestyle(.walking, randomDialogueIndex: 2)
+        store.speakForCurrentState(randomDialogueIndex: 3)
+
+        XCTAssertEqual(store.message, PetDialogueScene.walking.lines[3])
+        XCTAssertTrue(store.showsBubble)
     }
 }

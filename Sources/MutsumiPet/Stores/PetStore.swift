@@ -4,7 +4,7 @@ import Foundation
 final class PetStore: ObservableObject {
     @Published private(set) var mood: PetMood = .sleepy
     @Published private(set) var pose: PetPose = .idle
-    @Published private(set) var message = "……在。"
+    @Published private(set) var message = PetDialogueScene.idle.lines[0]
     @Published var showsBubble = true
     @Published private(set) var layerMode: WindowLayerMode
     @Published private(set) var scale: Double
@@ -14,13 +14,9 @@ final class PetStore: ObservableObject {
     @Published private(set) var wanderSpeed: Double
     @Published private(set) var animationFrame = 0
 
-    private var phraseIndex = 0
     private var dismissTask: Task<Void, Never>?
     private var settleTask: Task<Void, Never>?
     private let defaults: UserDefaults
-    private weak var llmSettings: LLMSettingsStore?
-    private let llmClient = LLMDialogueClient()
-    private var llmTask: Task<Void, Never>?
     private var activityTask: Task<Void, Never>?
     private var animationSequenceIndex = 0
     private var walkingDistance: Double = 0
@@ -30,20 +26,8 @@ final class PetStore: ObservableObject {
     private static let wanderingEnabledKey = "pet.wanderingEnabled"
     private static let wanderSpeedKey = "pet.wanderSpeed"
 
-    static let phrases = [
-        "……在。",
-        "你叫我？",
-        "不说话，也可以待在一起。",
-        "累了就休息。",
-        "今天的黄瓜……长高了一点。",
-        "吉他，之后会练。",
-        "桌面有点乱。",
-        "我不是不在意。"
-    ]
-
-    init(defaults: UserDefaults = .standard, llmSettings: LLMSettingsStore? = nil) {
+    init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        self.llmSettings = llmSettings
         let savedScale = defaults.object(forKey: Self.scaleKey) as? Double ?? 1
         scale = min(max(savedScale, 0.6), 1.4)
         layerMode = WindowLayerMode(
@@ -54,46 +38,45 @@ final class PetStore: ObservableObject {
         wanderSpeed = min(max(savedSpeed, 18), 90)
     }
 
-    func reactToTap() {
+    func reactToTap(randomDialogueIndex: Int? = nil) {
         interruptActivity()
-        phraseIndex = (phraseIndex + 1) % Self.phrases.count
-        message = Self.phrases[phraseIndex]
         mood = PetMood.allCases[(mood.rawValue + 1) % PetMood.allCases.count]
         pose = switch mood {
         case .sleepy: .idle
         case .curious: .curious
         case .pleased: .happy
         }
+        message = dialogueScene(for: pose).line(at: randomDialogueIndex)
         showsBubble = true
         scheduleDismiss()
     }
 
-    func idleTick(randomIndex: Int? = nil) {
+    func idleTick(randomIndex: Int? = nil, sleeping: Bool? = nil) {
         guard showsBubble == false else { return }
-        let index = randomIndex ?? Int.random(in: 0..<Self.phrases.count)
-        phraseIndex = max(0, min(index, Self.phrases.count - 1))
-        message = Self.phrases[phraseIndex]
+        let usesSleepingPose = sleeping ?? Bool.random()
+        let scene: PetDialogueScene = usesSleepingPose ? .sleeping : .idle
+        message = scene.line(at: randomIndex)
         mood = .sleepy
-        pose = phraseIndex.isMultiple(of: 2) ? .sleeping : .idle
+        pose = usesSleepingPose ? .sleeping : .idle
         showsBubble = true
         scheduleDismiss()
     }
 
-    func beginDrag() {
+    func beginDrag(randomDialogueIndex: Int? = nil) {
         guard pose != .grabbed else { return }
         interruptActivity()
         settleTask?.cancel()
         dismissTask?.cancel()
         pose = .grabbed
         mood = .curious
-        message = "……被抓住了。"
+        message = PetDialogueScene.grabbed.line(at: randomDialogueIndex)
         showsBubble = true
     }
 
-    func endDrag() {
+    func endDrag(randomDialogueIndex: Int? = nil) {
         guard pose == .grabbed else { return }
         pose = .curious
-        message = "……放下来了。"
+        message = PetDialogueScene.released.line(at: randomDialogueIndex)
         scheduleDismiss()
         settleTask?.cancel()
         settleTask = Task { @MainActor [weak self] in
@@ -130,31 +113,31 @@ final class PetStore: ObservableObject {
         defaults.set(wanderSpeed, forKey: Self.wanderSpeedKey)
     }
 
-    func lifestyleTick(randomEvent: Int? = nil) {
+    func lifestyleTick(randomEvent: Int? = nil, randomDialogueIndex: Int? = nil) {
         guard wanderingEnabled, pose != .grabbed, activity == .idle else { return }
         switch randomEvent ?? Int.random(in: 0..<8) {
         case 0, 1, 2, 3:
-            performLifestyle(.walking)
+            performLifestyle(.walking, randomDialogueIndex: randomDialogueIndex)
         case 4:
-            performLifestyle(.drinkingTea)
+            performLifestyle(.drinkingTea, randomDialogueIndex: randomDialogueIndex)
         case 5:
-            performLifestyle(.eatingSnack)
+            performLifestyle(.eatingSnack, randomDialogueIndex: randomDialogueIndex)
         case 6:
             pose = .sleeping
             mood = .sleepy
-            message = "稍微……休息一下。"
+            message = PetDialogueScene.sleeping.line(at: randomDialogueIndex)
             showsBubble = true
             scheduleDismiss()
         default:
             pose = .curious
             mood = .curious
-            message = "那边有什么？"
+            message = PetDialogueScene.curious.line(at: randomDialogueIndex)
             showsBubble = true
             scheduleDismiss()
         }
     }
 
-    func performLifestyle(_ requestedActivity: PetActivity) {
+    func performLifestyle(_ requestedActivity: PetActivity, randomDialogueIndex: Int? = nil) {
         guard wanderingEnabled, pose != .grabbed else { return }
         interruptActivity()
         switch requestedActivity {
@@ -164,19 +147,21 @@ final class PetStore: ObservableObject {
             beginActivity(.walking, duration: .seconds(20))
             pose = .curious
             mood = .curious
-            showsBubble = false
+            message = PetDialogueScene.walking.line(at: randomDialogueIndex)
+            showsBubble = true
+            scheduleDismiss()
         case .drinkingTea:
             beginActivity(.drinkingTea, duration: .seconds(7))
             pose = .idle
             mood = .pleased
-            message = "茶……温度刚好。"
+            message = PetDialogueScene.drinkingTea.line(at: randomDialogueIndex)
             showsBubble = true
             scheduleDismiss()
         case .eatingSnack:
             beginActivity(.eatingSnack, duration: .seconds(7))
             pose = .happy
             mood = .pleased
-            message = "点心，分你一点。"
+            message = PetDialogueScene.eatingSnack.line(at: randomDialogueIndex)
             showsBubble = true
             scheduleDismiss()
         case .idle:
@@ -208,45 +193,33 @@ final class PetStore: ObservableObject {
         interruptActivity()
         pose = .idle
         mood = .sleepy
-    }
-
-    func requestFreshThought() {
-        message = "……"
-        mood = .curious
-        pose = .curious
+        message = PetDialogueScene.idle.line()
         showsBubble = true
         scheduleDismiss()
-        requestDynamicReply(event: "用户请你主动说一句此刻想到的话。")
     }
 
-    func automaticThoughtTick() {
-        guard llmSettings?.automaticThoughtsEnabled == true else { return }
-        requestDynamicReply(event: "你在桌面安静待了一会儿。自然地对用户说一句此刻想到的话。")
+    func speakForCurrentState(randomDialogueIndex: Int? = nil) {
+        message = currentDialogueScene.line(at: randomDialogueIndex)
+        showsBubble = true
+        scheduleDismiss()
     }
 
-    private func requestDynamicReply(event: String) {
-        guard let configuration = llmSettings?.configuration() else {
-            llmSettings?.noteConfigurationUnavailable()
-            return
+    private var currentDialogueScene: PetDialogueScene {
+        switch activity {
+        case .walking: .walking
+        case .drinkingTea: .drinkingTea
+        case .eatingSnack: .eatingSnack
+        case .idle: dialogueScene(for: pose)
         }
-        let settings = llmSettings
-        settings?.noteRequestBegan()
-        llmTask?.cancel()
-        llmTask = Task { @MainActor [weak self, weak settings, llmClient] in
-            let clock = ContinuousClock()
-            let start = clock.now
-            do {
-                let reply = try await llmClient.reply(configuration: configuration, event: event)
-                guard Task.isCancelled == false, let self else { return }
-                settings?.noteRequestSucceeded(reply: reply, latency: start.duration(to: clock.now))
-                self.message = reply
-                self.showsBubble = true
-                self.scheduleDismiss()
-            } catch {
-                guard Task.isCancelled == false else { return }
-                settings?.noteRequestFailed(error, latency: start.duration(to: clock.now))
-                // Local dialogue remains visible; network failures never block pet interaction.
-            }
+    }
+
+    private func dialogueScene(for pose: PetPose) -> PetDialogueScene {
+        switch pose {
+        case .idle: .idle
+        case .curious: .curious
+        case .happy: .happy
+        case .sleeping: .sleeping
+        case .grabbed: .grabbed
         }
     }
 

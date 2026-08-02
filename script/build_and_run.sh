@@ -47,8 +47,8 @@ cat >"$INFO_PLIST" <<PLIST
   <key>CFBundleDisplayName</key><string>若叶睦桌宠</string>
   <key>CFBundleIconFile</key><string>MutsumiPet.icns</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleVersion</key><string>1</string>
-  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundleVersion</key><string>2</string>
+  <key>CFBundleShortVersionString</key><string>1.1.0</string>
   <key>LSMinimumSystemVersion</key><string>$MIN_SYSTEM_VERSION</string>
   <key>LSUIElement</key><true/>
   <key>NSPrincipalClass</key><string>NSApplication</string>

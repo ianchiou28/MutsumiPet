@@ -11,7 +11,6 @@ struct PetView: View {
     private let lifestyleTimer = Timer.publish(every: 18, on: .main, in: .common).autoconnect()
     private let activityAnimationTimer = Timer.publish(every: 0.125, on: .main, in: .common).autoconnect()
     private let walkingTimer = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
-    private let llmTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -88,9 +87,6 @@ struct PetView: View {
                 break
             }
         }
-        .onReceive(llmTimer) { _ in
-            store.automaticThoughtTick()
-        }
     }
 
     private var activityFrameOffset: CGSize {
@@ -137,10 +133,7 @@ struct PetView: View {
             Button("喝茶") { store.performLifestyle(.drinkingTea) }
             Button("吃点心") { store.performLifestyle(.eatingSnack) }
         }
-        Button("让睦想一句") { store.requestFreshThought() }
-        Button("打开控制台…") {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        }
+        Button("让睦说一句") { store.speakForCurrentState() }
         Menu("窗口层级：\(store.layerMode.title)") {
             ForEach(WindowLayerMode.allCases) { mode in
                 Button {

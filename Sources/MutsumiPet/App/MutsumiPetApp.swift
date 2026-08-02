@@ -4,15 +4,8 @@ import SwiftUI
 @main
 struct MutsumiPetApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @StateObject private var llmSettings: LLMSettingsStore
-    @StateObject private var store: PetStore
+    @StateObject private var store = PetStore()
     @StateObject private var windowController = PetWindowController()
-
-    init() {
-        let settings = LLMSettingsStore()
-        _llmSettings = StateObject(wrappedValue: settings)
-        _store = StateObject(wrappedValue: PetStore(llmSettings: settings))
-    }
 
     var body: some Scene {
         WindowGroup("若叶睦桌宠", id: "pet") {
@@ -28,10 +21,6 @@ struct MutsumiPetApp: App {
                 Button(store.showsBubble ? "隐藏气泡" : "显示气泡") { store.toggleBubble() }
                     .keyboardShortcut("b", modifiers: [.command])
             }
-        }
-
-        Settings {
-            LLMSettingsView(settings: llmSettings, petStore: store)
         }
     }
 }
