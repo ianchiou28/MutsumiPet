@@ -116,21 +116,6 @@ $env:MUTSUMIPET_CERT_PASSWORD = '...'
 脚本优先调用 Windows SDK 的 `signtool`（RFC 3161 时间戳），找不到就退回内置的
 `Set-AuthenticodeSignature`。两条路径都会打时间戳，这样证书过期后已发布的版本仍然有效。
 
-证书本身要另外购买，各选项差别很大：
-
-| 方案 | 成本 | 效果 |
-|---|---|---|
-| 自签名 | 免费 | **仅用于自测签名流程**，对其他用户毫无作用 |
-| [Azure Trusted Signing](https://learn.microsoft.com/azure/trusted-signing/) | 约 $10/月 | 微软自营，不需要硬件 U 盾，可直接在 GitHub Actions 里签；个人开发者也能申请（需要可验证的 3 年以上身份记录）|
-| [SignPath Foundation](https://signpath.org/) | 免费 | 面向符合条件的开源项目 |
-| Certum 开源代码签名 | 约 €100 起 | 支持个人身份验证，需要硬件卡 |
-| 商业 OV / EV 证书 | 约 $200–600/年 | 2023 年起私钥必须存放在硬件或云 HSM 中；EV 可立即获得 SmartScreen 信誉 |
-
-对这个非商业同人项目来说，Azure Trusted Signing 或 SignPath 是性价比最合理的两个选择。
-
-需要说明的是：签名能解决 SmartScreen 的「未知发布者」警告，但**智能应用控制比 SmartScreen 更严格**，
-它同时要求微软的信誉图谱认可该程序。有效签名会大幅提高通过率，但不保证首日即被放行。
-
 ## 开发与测试
 
 macOS：
